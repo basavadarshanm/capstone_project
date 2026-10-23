@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IEMS Solar Intelligence — Residential Solar & Battery Platform</title>
+    <meta name="description"
+        content="Grounded residential solar & battery sizing, PM Surya Ghar subsidy checker, DISCOM export tariffs, 25-year financial projections, and verified installer marketplace for Indian households.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <!-- Top Application Header -->
+    <header class="top-nav">
+        <div class="container nav-wrapper">
+            <a href="#" class="brand-group">
+                <div class="brand-icon">☀️</div>
+                <div class="brand-titles">
+                    <h1>IEMS Solar <span class="badge-tag">PM Surya Ghar Aligned</span></h1>
+                    <p>Intelligent Energy Management & Solar Sizing Platform</p>
+                </div>
+            </a>
+
+            <div class="nav-controls">
+                <!-- Portal Switcher: Homeowner Planning vs Installer B2B Lead Hub -->
+                <div class="portal-toggle">
+                    <button id="portal-btn-homeowner" class="portal-btn active">
+                        <span>🏠</span> For Homeowners
+                    </button>
+                    <button id="portal-btn-installer" class="portal-btn">
+                        <span>👷</span> Installer Leads Hub
+                    </button>
+                </div>
+
+                <!-- API / Standalone Status Indicator -->
+                <span id="backend-status-badge" style="font-size:0.75rem;font-weight:600;color:var(--text-faint);padding:0 6px;">
+                    ● Checking API...
+                </span>
+
+                <!-- Print / Save Proposal -->
+                <button class="icon-btn" onclick="printSolarProposal()" title="Print / Save Solar Proposal">
+                    📄
+                </button>
+
+                <!-- Dark / Light Mode Toggle -->
+                <button id="theme-toggle-btn" class="icon-btn" title="Toggle Dark/Light Mode">
+                    🌙
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Feature Navigation Strip (Sticky) -->
+    <nav class="feature-tabs-bar" id="feature-tabs-bar">
+        <div class="container">
+            <div class="tabs-track">
+                <a href="#section-hero" class="tab-link active"><span class="tab-icon">⚡</span> Quick Planner</a>
+                <a href="#section-location" class="tab-link"><span class="tab-icon">📍</span> Location Solar</a>
+                <a href="#section-budget" class="tab-link"><span class="tab-icon">🎯</span> Budget Matcher</a>
+                <a href="#section-subsidy" class="tab-link"><span class="tab-icon">🏛️</span> Subsidy Checker</a>
+                <a href="#section-discom" class="tab-link"><span class="tab-icon">⚡</span> DISCOM Tariffs</a>
+                <a href="#section-compare" class="tab-link"><span class="tab-icon">⚖️</span> Compare 3 Systems</a>
+                <a href="#section-financials" class="tab-link"><span class="tab-icon">📈</span> 25-Yr Projection</a>
+                <a href="#section-financing" class="tab-link"><span class="tab-icon">💳</span> Solar Loan & EMI</a>
+                <a href="#section-installers" class="tab-link"><span class="tab-icon">👷</span> Verified Installers</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- VIEW 1: HOMEOWNER SOLAR PLANNING VIEW -->
+    <main id="homeowner-views">
+
+        <!-- HERO SECTION: 60-Second Beginner Wizard -->
+        <section id="section-hero" class="hero-section">
+            <div class="container">
+                <div class="hero-grid">
+                    <div>
+                        <div class="hero-pill">
+                            <span>✨</span> Grounded in Real Satellite Irradiance & Smart Meter Data
+                        </div>
+                        <h2 class="hero-title">
+                            Cut Your Power Bill to <span class="highlight">₹0</span> with Confident Solar Sizing
+                        </h2>
+                        <p class="hero-subtitle">
+                            No solar jargon. No misleading averages. Discover exactly what size solar and battery system fits your roof, your budget, and your local electricity board rules.
+                        </p>
+
+                        <div class="hero-features-list">
+                            <div class="hero-feature-item">
+                                <span class="check-icon">✓</span> Up to ₹78,000 PM Surya Ghar Subsidy
+                            </div>
+                            <div class="hero-feature-item">
+                                <span class="check-icon">✓</span> DISCOM Net-Metering Export Tariffs
+                            </div>
+                            <div class="hero-feature-item">
+                                <span class="check-icon">✓</span> Outage Backup for Load Shedding
+                            </div>
+                            <div class="hero-feature-item">
+                                <span class="check-icon">✓</span> Zero-Down Concessional Green Loans
+                            </div>
+                        </div>
+
+                        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                            <a href="#section-compare" class="btn-teal" style="text-decoration:none;">
+                                ⚖️ Compare 3 Recommended Systems
+                            </a>
+                            <a href="#section-subsidy" class="btn-secondary" style="text-decoration:none;">
+                                🏛️ Check My Subsidy Eligibility
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Right Quick Assessment Card -->
+                    <div class="wizard-card">
+                        <div class="wizard-header">
+                            <h3>60-Second Solar Assessment</h3>
+                            <p>Adjust these 3 simple sliders to see your matched plan instantly.</p>
+                        </div>
+
+                        <!-- Step 1: City Selection -->
+                        <div class="form-group">
+                            <div class="form-label">
+                                <span>1. Your City / Region</span>
+                                <button type="button" id="btn-gps-detect" style="border:none;background:none;color:var(--accent-teal);font-size:0.75rem;cursor:pointer;font-weight:600;">
+                                    📍 Auto-Detect
+                                </button>
+                            </div>
+                            <select id="select-city" class="form-select"></select>
+                        </div>
+
+                        <!-- Step 2: Monthly Electricity Bill -->
+                        <div class="form-group">
+                            <div class="form-label">
+                                <span>2. Average Monthly Power Bill</span>
+                                <span id="val-bill" class="val-tag mono">₹3,500</span>
+                            </div>
+                            <div class="range-slider-wrap">
+                                <input type="range" id="slider-bill" class="range-slider" min="1000" max="25000" step="500" value="3500">
+                                <div class="slider-ticks">
+                                    <span>₹1,000</span>
+                                    <span>₹7,500</span>
+                                    <span>₹15,000</span>
+                                    <span>₹25,000+</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Total Budget Cap -->
+                        <div class="form-group">
+                            <div class="form-label">
+                                <span>3. Maximum Budget Cap</span>
+                                <span id="val-budget" class="val-tag mono">₹2,50,000</span>
+                            </div>
+                            <div class="range-slider-wrap">
+                                <input type="range" id="slider-budget" class="range-slider" min="50000" max="800000" step="25000" value="250000">
+                                <div class="slider-ticks">
+                                    <span>₹50k</span>
+                                    <span>₹2.5L</span>
+                                    <span>₹5.0L</span>
+                                    <span>₹8.0L+</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Primary Goal -->
+                        <div class="form-group">
+                            <div class="form-label">
+                                <span>4. What is your top priority?</span>
+                            </div>
+                            <div class="goal-pill-grid">
+                                <button type="button" class="goal-pill-btn" data-goal="savings">
+                                    💰 Max Savings
+                                </button>
+                                <button type="button" class="goal-pill-btn active" data-goal="balanced">
+                                    ⚖️ Balanced
+                                </button>
+                                <button type="button" class="goal-pill-btn" data-goal="backup">
+                                    🔋 Outage Backup
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Live Assessment Quick Match Box -->
+                        <div class="wizard-quick-match" id="wizard-live-summary">
+                            <div class="wizard-quick-match-head">
+                                <span class="badge-mini highlight" id="wizard-match-badge">⚖️ Smart Hybrid Recommended</span>
+                                <span class="wizard-quick-subsidy" id="wizard-match-subsidy">✓ ₹78,000 Subsidy</span>
+                            </div>
+                            <div class="wizard-quick-specs">
+                                <div class="spec-col">
+                                    <span class="spec-lbl">System Size</span>
+                                    <strong id="wizard-match-system" class="spec-val">3.5 kW + 5 kWh</strong>
+                                </div>
+                                <div class="spec-col">
+                                    <span class="spec-lbl">Monthly Savings</span>
+                                    <strong id="wizard-match-savings" class="spec-val" style="color:var(--accent-teal)">₹3,150/mo</strong>
+                                </div>
+                                <div class="spec-col">
+                                    <span class="spec-lbl">Net Cost</span>
+                                    <strong id="wizard-match-cost" class="spec-val mono">₹1,82,000</strong>
+                                </div>
+                            </div>
+                            <div class="wizard-quick-goal-desc" id="wizard-match-desc">
+                                ⚖️ Balanced choice: Powers high day loads, stores afternoon surplus in 5 kWh LiFePO4 battery, and offsets ~90% power bill.
+                            </div>
+                        </div>
+
+                        <!-- Subsidy Eligible Toggle -->
+                        <div style="display:flex;align-items:center;gap:8px;margin:16px 0;font-size:0.82rem;">
+                            <input type="checkbox" id="check-subsidy-eligible" checked style="accent-color:var(--accent-gold);cursor:pointer;">
+                            <label for="check-subsidy-eligible" style="cursor:pointer;color:var(--text-muted)">
+                                Apply PM Surya Ghar Central & State Subsidies
+                            </label>
+                        </div>
+
+                        <a href="#section-compare" class="btn-primary" style="text-decoration:none;">
+                            View Detailed System Breakdown ➔
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURE 1: Location-Based Solar Generation -->
+        <section id="section-location" class="feature-section">
+            <div class="container">
+                <div class="section-head">
+                    <div class="section-title-wrap">
+                        <span class="section-tag">Feature 1 • Grounded Physics</span>
+                        <h2>Location-Based Solar Generation Yield</h2>
+                        <p>Real NASA POWER satellite irradiance and local DISCOM grid reliability data for your exact location.</p>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <span style="font-size:0.85rem;color:var(--text-muted)">Active Station:</span>
+                        <strong id="loc-city-name" class="mono" style="font-size:1.1rem;color:var(--accent-gold)">Bengaluru</strong>
+                        <span id="loc-state-name" class="badge-tag">Karnataka</span>
+                    </div>
+                </div>
+
+                <div class="stat-pill-grid">
+                    <div class="stat-pill">
+                        <div class="label">Peak Sun Hours (PSH)</div>
+                        <div class="val" id="loc-psh-val">5.60 <span class="unit">hrs/day</span></div>
+                        <div class="sub">Solar irradiance GHI</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="label">Annual Generation</div>
+                        <div class="val" id="loc-yield-val">1,620 <span class="unit">kWh/kWp</span></div>
+                        <div class="sub">Per kW of solar per year</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="label">Optimal Panel Tilt</div>
+                        <div class="val" id="loc-tilt-val">13° <span class="unit">South</span></div>
+                        <div class="sub">Max annual yield angle</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="label">Avg Daily Outages</div>
+                        <div class="val" id="loc-outage-val" style="color:var(--accent-teal)">0.9 <span class="unit">hrs/day</span></div>
+                        <div class="sub">BESCOM smart-meter measured</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="label">Current Grid Tariff</div>
+                        <div class="val" id="loc-tariff-val">₹7.80 <span class="unit">/ unit</span></div>
+                        <div class="sub">Average retail import slab</div>
+                    </div>
+                </div>
+
+                <div class="location-visual-grid">
+                    <div class="card sun-compass-card">
+                        <div>
+                            <h3 style="font-size:1.15rem;margin-bottom:6px;">Sun Orientation & Installation Angle</h3>
+                            <p style="font-size:0.85rem;color:var(--text-muted)">Panels must face True South in India for maximum year-round sunshine.</p>
+                        </div>
+
+                        <div class="compass-visual">
+                            <div class="compass-dial">
+                                <span class="compass-cardinal north">N</span>
+                                <span class="compass-cardinal south">S (180°)</span>
+                                <span class="compass-cardinal east">E</span>
+                                <span class="compass-cardinal west">W</span>
+                                <div id="compass-pointer-needle" class="compass-pointer"></div>
+                                <div class="compass-center-dot"></div>
+                            </div>
+                        </div>
+
+                        <div id="loc-layman-summary" style="font-size:0.85rem;line-height:1.6;color:var(--text-muted);background:var(--bg-card-subtle);padding:14px;border-radius:var(--radius-md);border-left:3px solid var(--accent-gold);">
+                            Loading location summary...
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                            <div>
+                                <h3 style="font-size:1.15rem;margin-bottom:4px;">Monthly Solar Output Profile</h3>
+                                <p style="font-size:0.82rem;color:var(--text-muted)">Shows how generation peaks in summer (Apr-May) and dips during monsoons (Jul-Aug).</p>
+                            </div>
+                            <span class="badge-mini highlight">12 Months Physics</span>
+                        </div>
+                        <div id="wrap-monthly-yield" class="chart-canvas-wrapper" style="min-height:230px;position:relative;">
+                            <canvas id="chart-monthly-yield" style="display:none;"></canvas>
+                            <div id="svg-monthly-yield" class="svg-chart-host"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURE 2: Budget-Based System Matching -->
+        <section id="section-budget" class="feature-section">
+            <div class="container">
+                <div class="section-head">
+                    <div class="section-title-wrap">
+                        <span class="section-tag">Feature 2 • Smart Allocation</span>
+                        <h2>Budget-Based System Matching</h2>
+                        <p>We automatically calculate the maximum possible solar generation and battery resilience that fits strictly inside your budget.</p>
+                    </div>
+                </div>
+
+                <div class="card" style="border-left:4px solid var(--accent-gold);margin-bottom:28px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+                        <div>
+                            <span id="budget-matched-badge" class="badge-mini highlight" style="margin-bottom:6px;display:inline-block;">Best Budget Fit</span>
+                            <h3 id="budget-matched-title" style="font-size:1.6rem;margin-bottom:4px;">Smart Hybrid (Solar + Battery)</h3>
+                            <p style="font-size:0.85rem;color:var(--text-muted)">Recommended for your monthly bill and budget profile.</p>
+                        </div>
+
+                        <div style="text-align:right;">
+                            <div style="font-size:0.75rem;color:var(--text-muted);">Net Out-of-Pocket Cost</div>
+                            <div id="budget-matched-net" class="mono" style="font-size:2rem;font-weight:700;color:var(--accent-teal);">₹1,82,000</div>
+                            <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;">
+                                <span id="budget-matched-orig" style="font-size:0.8rem;text-decoration:line-through;color:var(--text-faint);">₹2,60,000</span>
+                                <span id="budget-matched-subsidy" style="font-size:0.75rem;color:var(--accent-gold-text);font-weight:700;">−₹78,000 subsidy</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin:20px 0 10px;">
+                        <div style="height:8px;background:var(--border-strong);border-radius:4px;overflow:hidden;">
+                            <div id="budget-utilization-bar" style="height:100%;background:linear-gradient(90deg,var(--accent-teal),var(--accent-gold));width:75%;transition:width 0.3s ease;"></div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-muted);margin-top:4px;">
+                            <span id="budget-utilization-text">Uses 75% of your ₹2,50,000 budget</span>
+                            <span>Remaining Budget: Available for battery expansion</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-pill-grid" style="margin-bottom:0;margin-top:20px;">
+                        <div class="stat-pill">
+                            <div class="label">Solar Panel Capacity</div>
+                            <div class="val" id="budget-matched-panel">3.5 <span class="unit">kW</span></div>
+                            <div class="sub">7-8 Monocrystalline Panels</div>
+                        </div>
+                        <div class="stat-pill">
+                            <div class="label">Battery Storage</div>
+                            <div class="val" id="budget-matched-battery">5.0 <span class="unit">kWh</span></div>
+                            <div class="sub">Safe LiFePO4 Lithium Bank</div>
+                        </div>
+                        <div class="stat-pill">
+                            <div class="label">Est. Monthly Savings</div>
+                            <div class="val" id="budget-matched-savings" style="color:var(--accent-teal)">₹3,150 <span class="unit">/mo</span></div>
+                            <div class="sub">Wipes ~90% of electricity bill</div>
+                        </div>
+                        <div class="stat-pill">
+                            <div class="label">Payback Period</div>
+                            <div class="val" id="budget-matched-payback">4.2 <span class="unit">Years</span></div>
+                            <div class="sub">100% Free power after this</div>
+                        </div>
+                        <div class="stat-pill">
+                            <div class="label">Roof Area Required</div>
+                            <div class="val" id="budget-matched-roof">260 <span class="unit">sq. ft</span></div>
+                            <div class="sub">Shadow-free flat terrace</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURE 5: Compare 3 Solar Systems Side-by-Side -->
+        <section id="section-compare" class="feature-section">
+            <div class="container">
+                <div class="section-head">
+                    <div class="section-title-wrap">
+                        <span class="section-tag">Feature 5 • Transparent Decision Making</span>
+                        <h2>Compare 3 Solar System Configurations</h2>
+                        <p>Compare costs, outage protection, and 25-year financial returns side-by-side to choose what suits your family best.</p>
+                    </div>
+                </div>
+
+                <div class="compare-grid">
+                    <!-- Option 1: Starter Eco -->
+                    <div id="cmp-card-starter" class="compare-card">
+                        <div id="cmp-banner-starter" class="winner-banner" style="display:none;">Lowest Cost Option</div>
+                        <div>
+                            <div class="compare-card-head">
+                                <span class="type-tag">Grid-Connected Only</span>
+                                <h3 id="cmp-starter-title">Starter Eco (Grid-Tie)</h3>
+                                <div id="cmp-starter-specs" class="specs">3.0 kW Panel | No Battery</div>
+                            </div>
+
+                            <div class="compare-price-block">
+                                <div class="net-label">Net Out-of-Pocket Cost</div>
+                                <div id="cmp-starter-net" class="price">₹78,000</div>
+                                <div id="cmp-starter-gross" class="orig-price">₹1,56,000</div>
+                                <span id="cmp-starter-subsidy" class="subsidy-badge">−₹78,000 Subsidy</span>
+                            </div>
+
+                            <div class="compare-metrics-list">
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Monthly Bill Savings</span>
+                                    <span id="cmp-starter-monthly" class="metric-val" style="color:var(--accent-teal)">₹2,450/mo</span>
+                                </div>
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Annual Savings</span>
+                                    <span id="cmp-starter-annual" class="metric-val">₹29,400/yr</span>
+                                </div>
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Payback Period</span>
+                                    <span id="cmp-starter-payback" class="metric-val" style="color:var(--accent-gold-text);font-weight:700;">2.7 Years</span>
+                                </div>
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Power Cut Backup</span>
+                                    <span id="cmp-starter-backup" class="metric-val" style="color:var(--accent-red)">0 Hrs (Shuts down)</span>
+                                </div>
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Terrace Space Needed</span>
+                                    <span id="cmp-starter-roof" class="metric-val">225 sq. ft</span>
+                                </div>
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Battery Maintenance</span>
+                                    <span class="metric-val">Zero (No battery)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn-secondary" style="width:100%;justify-content:center;" onclick="selectSystemForDetailedAnalysis('starter')">
+                            Analyze Starter System ➔
+                        </button>
+                    </div>
+
+                    <!-- Option 2: Smart Hybrid -->
+                    <div id="cmp-card-hybrid" class="compare-card winner">
+                        <div id="cmp-banner-hybrid" class="winner-banner">★ Recommended Sweet Spot</div>
+                        <div>
+                            <div class="compare-card-head">
+                                <span class="type-tag" style="color:var(--accent-gold);font-weight:700;">Solar + Lithium Storage</span>
+                                <h3 id="cmp-hybrid-title">Smart Hybrid System</h3>
+                                <div id="cmp-hybrid-specs" class="specs">3.5 kW Panel | 5.0 kWh Battery</div>
+                            </div>
+
+                            <div class="compare-price-block" style="background:var(--accent-gold-tint);">
+                                <div class="net-label" style="color:var(--accent-gold-text)">Net Out-of-Pocket Cost</div>
+                                <div id="cmp-hybrid-net" class="price" style="color:var(--accent-gold-text)">₹1,82,000</div>
+                                <div id="cmp-hybrid-gross" class="orig-price">₹2,60,000</div>
+                                <span id="cmp-hybrid-subsidy" class="subsidy-badge">−₹78,000 Subsidy</span>
+                            </div>
+
+                            <div class="compare-metrics-list">
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Monthly Bill Savings</span>
+                                    <span id="cmp-hybrid-monthly" class="metric-val" style="color:var(--accent-teal)">₹3,150/mo</span>
+                                </div>
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Annual Savings</span>
+                                    <span id="cmp-hybrid-annual" class="metric-val">₹37,800/yr</span>
+                                </div>
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Payback Period</span>
+                                    <span id="cmp-hybrid-payback" class="metric-val" style="color:var(--accent-gold-text);font-weight:700;">4.4 Years</span>
+                                </div>
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Power Cut Backup</span>
+                                    <span id="cmp-hybrid-backup" class="metric-val" style="color:var(--accent-teal);font-weight:700;">6-8 Hours Backup</span>
+                                </div>
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Terrace Space Needed</span>
+                                    <span id="cmp-hybrid-roof" class="metric-val">260 sq. ft</span>
+                                </div>
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Smart Control</span>
+                                    <span class="metric-val">Automatic Cutover</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn-primary" style="justify-content:center;" onclick="selectSystemForDetailedAnalysis('hybrid')">
+                            Analyze Hybrid System ➔
+                        </button>
+                    </div>
+
+                    <!-- Option 3: Resilience Pro -->
+                    <div id="cmp-card-resilience" class="compare-card">
+                        <div id="cmp-banner-resilience" class="winner-banner" style="display:none;">Max Resilience</div>
+                        <div>
+                            <div class="compare-card-head">
+                                <span class="type-tag">Full Energy Independence</span>
+                                <h3 id="cmp-resilience-title">Resilience Pro System</h3>
+                                <div id="cmp-resilience-specs" class="specs">5.0 kW Panel | 10.0 kWh Battery</div>
+                            </div>
+
+                            <div class="compare-price-block">
+                                <div class="net-label">Net Out-of-Pocket Cost</div>
+                                <div id="cmp-resilience-net" class="price">₹3,27,000</div>
+                                <div id="cmp-resilience-gross" class="orig-price">₹4,05,000</div>
+                                <span id="cmp-resilience-subsidy" class="subsidy-badge">−₹78,000 Subsidy</span>
+                            </div>
+
+                            <div class="compare-metrics-list">
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Monthly Bill Savings</span>
+                                    <span id="cmp-resilience-monthly" class="metric-val" style="color:var(--accent-teal)">₹4,300/mo</span>
+                                </div>
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Annual Savings</span>
+                                    <span id="cmp-resilience-annual" class="metric-val">₹51,600/yr</span>
+                                </div>
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Payback Period</span>
+                                    <span id="cmp-resilience-payback" class="metric-val" style="color:var(--accent-gold-text);font-weight:700;">6.2 Years</span>
+                                </div>
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Power Cut Backup</span>
+                                    <span id="cmp-resilience-backup" class="metric-val" style="color:var(--accent-teal);font-weight:700;">14+ Hours (Runs ACs)</span>
+                                </div>
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Terrace Space Needed</span>
+                                    <span id="cmp-resilience-roof" class="metric-val">375 sq. ft</span>
+                                </div>
+                                <div class="compare-metric-row">
+                                    <span class="metric-label">Off-Grid Capability</span>
+                                    <span class="metric-val">100% Autonomous</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn-secondary" style="width:100%;justify-content:center;" onclick="selectSystemForDetailedAnalysis('resilience')">
+                            Analyze Resilience System ➔
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURE 3: Subsidy Eligibility Checker -->
+        <section id="section-subsidy" class="feature-section">
+            <div class="container">
+                <div class="section-head">
+                    <div class="section-title-wrap">
+                        <span class="section-tag">Feature 3 • Official Government Incentives</span>
+                        <h2>PM Surya Ghar Subsidy Eligibility Checker</h2>
+                        <p>Calculate your applicable central and state subsidies accurately without unapproved claims or misleading promises.</p>
+                    </div>
+                    <a href="https://pmsuryaghar.gov.in" target="_blank" rel="noopener noreferrer" class="btn-secondary">
+                        Visit National Portal ↗
+                    </a>
+                </div>
+
+                <div class="subsidy-calc-grid">
+                    <div class="card">
+                        <h3 style="font-size:1.25rem;margin-bottom:14px;">Government Subsidy Slab Structure</h3>
+                        <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:20px;">
+                            Under the PM Surya Ghar: Muft Bijli Yojana launched in 2024, subsidies are paid directly to your bank account (DBT) within 30 days of net-meter commissioning.
+                        </p>
+
+                        <div class="subsidy-rules-card">
+                            <div class="subsidy-rule-tier">
+                                <div class="tier-info">
+                                    <h4>Up to 1.0 kW Solar System</h4>
+                                    <p>Suitable for 1-2 BHK with bill under ₹1,500/month</p>
+                                </div>
+                                <div class="tier-amount">₹30,000</div>
+                            </div>
+
+                            <div class="subsidy-rule-tier">
+                                <div class="tier-info">
+                                    <h4>2.0 kW Solar System</h4>
+                                    <p>₹30,000 per kW up to 2 kW capacity</p>
+                                </div>
+                                <div class="tier-amount">₹60,000</div>
+                            </div>
+
+                            <div class="subsidy-rule-tier">
+                                <div class="tier-info">
+                                    <h4>3.0 kW to 10.0 kW Capacity</h4>
+                                    <p>Flat ₹78,000 maximum cap for individual homes</p>
+                                </div>
+                                <div class="tier-amount">₹78,000</div>
+                            </div>
+                        </div>
+
+                        <div style="background:var(--accent-teal-tint);border-radius:var(--radius-md);padding:18px;margin-top:20px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <div>
+                                    <div style="font-size:0.75rem;font-weight:700;color:var(--accent-teal-text);text-transform:uppercase;">Subsidy for your system (<span id="subsidy-system-kw">3.5 kW</span>)</div>
+                                    <div style="font-size:0.82rem;color:var(--accent-teal-text);">Central PM Surya Ghar + State Additions</div>
+                                </div>
+                                <div id="subsidy-total-amount" class="mono" style="font-size:1.8rem;font-weight:700;color:var(--accent-teal);">
+                                    ₹78,000
+                                </div>
+                            </div>
+                        </div>
+
+                        <p id="subsidy-state-note" style="font-size:0.8rem;color:var(--text-muted);margin-top:14px;line-height:1.5;">
+                            Loading state subsidy details...
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="font-size:1.25rem;margin-bottom:14px;">Instant Eligibility Verification</h3>
+                        <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:18px;">
+                            Confirm these 5 statutory conditions to guarantee 100% subsidy approval.
+                        </p>
+
+                        <ul class="subsidy-checklist">
+                            <li>
+                                <span class="checklist-icon">✓</span>
+                                <div>
+                                    <strong>Electricity Meter in Applicant's Name</strong>
+                                    <p style="font-size:0.78rem;">Electricity bill name must match Aadhaar card and bank account passbook exactly.</p>
+                                </div>
+                            </li>
+                            <li>
+                                <span class="checklist-icon">✓</span>
+                                <div>
+                                    <strong>Roof Ownership or Legal Right</strong>
+                                    <p style="font-size:0.78rem;">Individual roof, bungalow terrace, or top floor with written NOC from society.</p>
+                                </div>
+                            </li>
+                            <li>
+                                <span class="checklist-icon">✓</span>
+                                <div>
+                                    <strong>Grid-Connected Bi-directional Net Meter</strong>
+                                    <p style="font-size:0.78rem;">Must be installed and certified by your local DISCOM division.</p>
+                                </div>
+                            </li>
+                            <li>
+                                <span class="checklist-icon">✓</span>
+                                <div>
+                                    <strong>DCR (Domestic Content Requirement) Panels</strong>
+                                    <p style="font-size:0.78rem;">Solar cells and modules manufactured in India (Make-In-India compliance).</p>
+                                </div>
+                            </li>
+                            <li>
+                                <span class="checklist-icon">✓</span>
+                                <div>
+                                    <strong>MNRE Empanelled Vendor Installation</strong>
+                                    <p style="font-size:0.78rem;">Only work registered through the National Portal qualifies for DBT grant.</p>
+                                </div>
+                            </li>
+                        </ul>
+
+                        <div style="margin-top:24px;">
+                            <button class="btn-primary" onclick="openSurveyModal('MNRE Empanelled Partner')">
+                                Apply with Verified Empanelled Installer ➔
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURE 4: DISCOM Export Tariff Database -->
+        <section id="section-discom" class="feature-section">
+            <div class="container">
+                <div class="section-head">
+                    <div class="section-title-wrap">
+                        <span class="section-tag">Feature 4 • Regulatory Grounding</span>
+                        <h2>DISCOM Export Tariff & Net-Metering Database</h2>
+                        <p>Know exactly how much your power utility credits you for surplus solar electricity pushed back into the grid.</p>
+                    </div>
+
+                    <div style="min-width:280px;">
+                        <label for="select-discom" style="display:block;font-size:0.75rem;font-weight:600;margin-bottom:6px;color:var(--text-muted)">Select Your Power DISCOM:</label>
+                        <select id="select-discom" class="form-select"></select>
+                    </div>
+                </div>
+
+                <div class="card discom-card-main">
+                    <div class="discom-header-badge">
+                        <div>
+                            <span id="discom-state-label" class="badge-tag">Karnataka</span>
+                            <h3 id="discom-full-name" style="font-size:1.45rem;margin-top:4px;">Bangalore Electricity Supply Company Ltd.</h3>
+                        </div>
+                        <span id="discom-model-tag" class="badge-mini highlight" style="font-size:0.8rem;padding:6px 14px;">Net Metering (&lt;10 kW) &amp; Gross Metering</span>
+                    </div>
+
+                    <div class="discom-meta-grid">
+                        <div class="discom-meta-box">
+                            <div class="lbl">Surplus Export Tariff</div>
+                            <div id="discom-export-rate" class="num" style="color:var(--accent-teal)">₹3.82 / unit</div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">Feed-in credit paid to you</div>
+                        </div>
+                        <div class="discom-meta-box">
+                            <div class="lbl">Retail Grid Import Rate</div>
+                            <div id="discom-import-rate" class="num">₹7.80 / unit</div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">What you pay for grid power</div>
+                        </div>
+                        <div class="discom-meta-box">
+                            <div class="lbl">Banking Settlement</div>
+                            <div id="discom-settlement-period" class="num" style="font-size:1.15rem;">Monthly rollover, Annual payout</div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">Credit reset & payout cycle</div>
+                        </div>
+                        <div class="discom-meta-box">
+                            <div class="lbl">Grid Reliability</div>
+                            <div id="discom-grid-stability" class="num" style="font-size:1.15rem;color:var(--accent-gold-text)">Moderate Cuts</div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">Hybrid battery advised</div>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;background:var(--bg-card-subtle);padding:20px;border-radius:var(--radius-md);margin-top:20px;">
+                        <div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;">Estimated Daytime Surplus Export</div>
+                            <div id="discom-est-export-units" class="mono" style="font-size:1.4rem;font-weight:700;color:var(--text-main);margin:4px 0;">1,420 units/year</div>
+                            <p style="font-size:0.8rem;color:var(--text-muted)">Excess solar generated during sunny midday hours sent to grid.</p>
+                        </div>
+                        <div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;">Annual Export Credit Payout</div>
+                            <div id="discom-est-export-revenue" class="mono" style="font-size:1.4rem;font-weight:700;color:var(--accent-teal);margin:4px 0;">₹3,038 / year (₹253/mo)</div>
+                            <p style="font-size:0.8rem;color:var(--text-muted)">Credited directly in your electricity bill by DISCOM.</p>
+                        </div>
+                    </div>
+
+                    <p id="discom-notes-text" style="font-size:0.82rem;color:var(--text-muted);margin-top:16px;line-height:1.5;">
+                        Loading DISCOM regulatory notes...
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURE 6: 25-Year Financial Projection -->
+        <section id="section-financials" class="feature-section">
+            <div class="container">
+                <div class="section-head">
+                    <div class="section-title-wrap">
+                        <span class="section-tag">Feature 6 • Realistic Economics</span>
+                        <h2>25-Year Wealth & Savings Projection</h2>
+                        <p>Modeled with real-world panel degradation (0.55%/yr), 4.5% grid tariff inflation, inverter swap at Yr 10, and annual maintenance.</p>
+                    </div>
+                </div>
+
+                <div class="stat-pill-grid">
+                    <div class="stat-pill">
+                        <div class="label">25-Year Net Profit (NPV)</div>
+                        <div class="val" id="fin-kpi-npv" style="color:var(--accent-teal)">₹6,84,000</div>
+                        <div class="sub">Discounted at 8% annual rate</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="label">Total Lifetime Savings</div>
+                        <div class="val" id="fin-kpi-lifetime-profit">₹14,50,000</div>
+                        <div class="sub">Cumulative cash saved</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="label">Breakeven Year</div>
+                        <div class="val" id="fin-kpi-breakeven" style="color:var(--accent-gold-text)">4.4 Years</div>
+                        <div class="sub">100% investment recovered</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="label">Solar Cost of Energy</div>
+                        <div class="val" id="fin-kpi-lcoe" style="font-size:1.3rem;">₹2.10 <span class="unit">/ kWh</span></div>
+                        <div class="sub">vs Grid tariff ₹6.80+</div>
+                    </div>
+                </div>
+
+                <div class="financial-chart-container">
+                    <div class="chart-header-row">
+                        <h3 style="font-size:1.1rem;">Cumulative Net Cashflow & Annual Savings (Year 1 to 25)</h3>
+                        <span class="badge-mini highlight">Inverter Swap Deducted at Yr 10</span>
+                    </div>
+                    <div id="wrap-25yr-projection" class="chart-canvas-wrapper" style="min-height:300px;position:relative;">
+                        <canvas id="chart-25yr-projection" style="display:none;"></canvas>
+                        <div id="svg-25yr-projection" class="svg-chart-host"></div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Solar Generation</th>
+                                    <th>Grid Tariff</th>
+                                    <th>Annual Savings</th>
+                                    <th>O&M / Maintenance</th>
+                                    <th>Net Annual Return</th>
+                                    <th>Cumulative Profit</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-financials-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURE 8: Financing & Solar Loan EMI Calculator -->
+        <section id="section-financing" class="feature-section">
+            <div class="container">
+                <div class="section-head">
+                    <div class="section-title-wrap">
+                        <span class="section-tag">Feature 8 • Zero-Down Solar Lending</span>
+                        <h2>Financing & Solar Loan EMI Calculator</h2>
+                        <p>Government concessional loans under PM Surya Ghar are available at 7.0% p.a. without collateral up to ₹2,00,000.</p>
+                    </div>
+                </div>
+
+                <div class="finance-grid">
+                    <div class="finance-calc-box">
+                        <h3 style="font-size:1.2rem;margin-bottom:18px;">Customize Your Loan Terms</h3>
+
+                        <div class="form-group">
+                            <div class="form-label">
+                                <span>Down Payment (%)</span>
+                                <span id="val-down-payment" class="val-tag mono">10%</span>
+                            </div>
+                            <div class="range-slider-wrap">
+                                <input type="range" id="slider-down-payment" class="range-slider" min="0" max="50" step="5" value="10">
+                                <div class="slider-ticks">
+                                    <span>0% (Zero Down)</span>
+                                    <span>25%</span>
+                                    <span>50%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-label">
+                                <span>Loan Tenure (Years)</span>
+                                <span id="val-loan-tenure" class="val-tag mono">5 Years (60 Mo)</span>
+                            </div>
+                            <div class="range-slider-wrap">
+                                <input type="range" id="slider-loan-tenure" class="range-slider" min="1" max="10" step="1" value="5">
+                                <div class="slider-ticks">
+                                    <span>1 Yr</span>
+                                    <span>3 Yrs</span>
+                                    <span>5 Yrs</span>
+                                    <span>7 Yrs</span>
+                                    <span>10 Yrs</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-label">
+                                <span>Interest Rate (% per annum)</span>
+                                <span id="val-interest-rate" class="val-tag mono">7.0% p.a.</span>
+                            </div>
+                            <div class="range-slider-wrap">
+                                <input type="range" id="slider-interest-rate" class="range-slider" min="6.5" max="12.0" step="0.25" value="7.0">
+                                <div class="slider-ticks">
+                                    <span>6.5% (Govt Loan)</span>
+                                    <span>9.0%</span>
+                                    <span>12.0% (Private NBFC)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-color);">
+                            <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Approved Partner Banks</div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:0.75rem;">
+                                <span class="badge-mini highlight">SBI Surya Ghar (7.0%)</span>
+                                <span class="badge-mini">Canara Bank (7.0%)</span>
+                                <span class="badge-mini">PNB Solar (7.25%)</span>
+                                <span class="badge-mini">Tata Capital (8.75%)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="finance-summary-box">
+                        <div>
+                            <h3 style="font-size:1.2rem;margin-bottom:14px;">Monthly Cashflow Impact</h3>
+
+                            <div class="stat-pill-grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px;">
+                                <div class="stat-pill">
+                                    <div class="label">Monthly Solar Savings</div>
+                                    <div class="val" id="fin-monthly-savings" style="color:var(--accent-teal)">₹3,150</div>
+                                    <div class="sub">Clean bill reduction</div>
+                                </div>
+                                <div class="stat-pill">
+                                    <div class="label">Monthly Loan EMI</div>
+                                    <div class="val" id="fin-monthly-emi" style="color:var(--accent-gold-text)">₹2,180</div>
+                                    <div class="sub">Pay to bank</div>
+                                </div>
+                            </div>
+
+                            <div id="wrap-loan-vs-savings" style="min-height:140px;position:relative;margin-bottom:16px;">
+                                <canvas id="chart-loan-vs-savings" style="display:none;"></canvas>
+                                <div id="svg-loan-vs-savings" class="svg-chart-host"></div>
+                            </div>
+
+                            <div id="net-positive-indicator-box" class="net-positive-indicator">
+                                <h4>🎉 You are Net Positive from Day 1!</h4>
+                                <p>Your electricity savings exceed the loan EMI. Solar puts money in your pocket starting month 1.</p>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:20px;display:flex;justify-content:space-between;font-size:0.8rem;color:var(--text-muted);border-top:1px solid var(--border-color);padding-top:12px;">
+                            <span>Loan Principal: <strong id="fin-loan-principal" class="mono">₹1,63,800</strong></span>
+                            <span>Down Payment: <strong id="fin-down-amount" class="mono">₹18,200</strong></span>
+                            <span>Total Interest: <strong id="fin-total-interest" class="mono">₹30,800</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURE 7: Verified Installer Marketplace -->
+        <section id="section-installers" class="feature-section">
+            <div class="container">
+                <div class="section-head">
+                    <div class="section-title-wrap">
+                        <span class="section-tag">Feature 7 • Trusted Execution</span>
+                        <h2>Verified Solar Installer Marketplace</h2>
+                        <p>Connect with pre-screened, MNRE-empanelled EPC solar installers verified for PM Surya Ghar subsidy delivery.</p>
+                    </div>
+
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <label for="filter-installer-city" style="font-size:0.82rem;font-weight:600;color:var(--text-muted);">Filter City:</label>
+                        <select id="filter-installer-city" class="form-select" style="width:180px;"></select>
+                    </div>
+                </div>
+
+                <div id="installers-grid" class="installer-grid"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- VIEW 2: SOLAR PROJECT LEADS (B2B INSTALLER PORTAL) -->
+    <section id="installer-portal-view" class="feature-section" style="display:none;padding-top:30px;">
+        <div class="container">
+            <div class="section-head">
+                <div class="section-title-wrap">
+                    <span class="section-tag" style="color:var(--accent-blue)">Feature 9 • Contractor B2B Marketplace</span>
+                    <h2>Qualified Solar Project Leads</h2>
+                    <p>Verified customer inquiries from real homeowners who just calculated their solar plan. Claim exclusive leads and book site surveys.</p>
+                </div>
+
+                <div style="text-align:right;">
+                    <div id="leads-total-count" style="font-size:1.1rem;font-weight:700;color:var(--accent-teal);">5 Leads Available</div>
+                    <span class="badge-mini highlight">100% Phone & Bill Verified</span>
+                </div>
+            </div>
+
+            <div class="leads-filter-bar">
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                    <div>
+                        <label for="filter-lead-city" style="font-size:0.75rem;font-weight:600;display:block;margin-bottom:4px;">Filter by City:</label>
+                        <select id="filter-lead-city" class="form-select" style="padding:6px 12px;font-size:0.82rem;">
+                            <option value="all">All Locations</option>
+                            <option value="Mathura">Mathura</option>
+                            <option value="Bareilly">Bareilly</option>
+                            <option value="Bengaluru">Bengaluru</option>
+                            <option value="Jaipur">Jaipur</option>
+                            <option value="Mumbai">Mumbai</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="filter-lead-sort" style="font-size:0.75rem;font-weight:600;display:block;margin-bottom:4px;">Sort by:</label>
+                        <select id="filter-lead-sort" class="form-select" style="padding:6px 12px;font-size:0.82rem;">
+                            <option value="latest">Latest Inquiries</option>
+                            <option value="intent">Highest Intent Score</option>
+                            <option value="bill">Highest Monthly Bill</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <button class="btn-secondary" onclick="renderLeadsList()" style="font-size:0.8rem;padding:8px 12px;">
+                        🔄 Refresh Feed
+                    </button>
+                    <button class="btn-teal" onclick="openSurveyModal('My Solar Company')" style="font-size:0.8rem;padding:8px 14px;">
+                        + Simulate New Customer Lead
+                    </button>
+                </div>
+            </div>
+
+            <div id="leads-container" class="leads-grid"></div>
+        </div>
+    </section>
+
+    <!-- MODAL 1: Request Site Survey & Instant Quote -->
+    <div id="modal-survey-quote" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close">×</button>
+            <h3 style="font-size:1.4rem;margin-bottom:4px;">Request Free Rooftop Site Survey</h3>
+            <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:20px;">
+                Connecting with <strong id="survey-modal-installer" style="color:var(--accent-gold);">SunShine CleanTech EPC</strong>
+            </p>
+
+            <form onsubmit="submitSurveyQuote(event)">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" id="survey-input-name" class="form-input" placeholder="e.g. Rahul Sharma" required value="Rahul Sharma">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Mobile Number (for OTP & Site Visit)</label>
+                    <input type="tel" id="survey-input-phone" class="form-input" placeholder="e.g. +91 98765 43210" required value="+91 98765 43210">
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group">
+                        <label class="form-label">City</label>
+                        <input type="text" id="survey-field-city" class="form-input" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Monthly Bill (₹)</label>
+                        <input type="number" id="survey-field-bill" class="form-input" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Selected System Spec</label>
+                    <input type="text" id="survey-field-system" class="form-input" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Specific Request or Notes</label>
+                    <textarea id="survey-input-notes" class="form-input" rows="2" placeholder="e.g. Need site survey this Saturday. Want subsidy assistance.">Need site survey this weekend. Please check shadow clearance.</textarea>
+                </div>
+
+                <button type="submit" class="btn-primary" style="margin-top:10px;">
+                    Confirm & Submit Survey Request ➔
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Claim Lead -->
+    <div id="modal-claim-lead" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close">×</button>
+            <h3 style="font-size:1.35rem;margin-bottom:4px;">Claim Qualified Customer Lead</h3>
+            <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px;">
+                Unlock direct phone number, rooftop address, and survey schedule.
+            </p>
+
+            <div style="background:var(--bg-card-subtle);padding:16px;border-radius:var(--radius-md);margin-bottom:20px;font-size:0.85rem;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                    <span style="color:var(--text-muted)">Lead ID:</span>
+                    <strong id="claim-modal-lead-id">LEAD-201</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                    <span style="color:var(--text-muted)">Customer Name:</span>
+                    <strong id="claim-modal-customer-name">Vikram Malhotra</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                    <span style="color:var(--text-muted)">Location:</span>
+                    <strong id="claim-modal-city">Mathura, UP</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                    <span style="color:var(--text-muted)">Desired System:</span>
+                    <strong id="claim-modal-system">4.5 kW + 5.0 kWh Battery</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border-color);padding-top:8px;">
+                    <span style="color:var(--text-muted);font-weight:700;">Lead Unlock Fee:</span>
+                    <strong id="claim-modal-price" class="mono" style="color:var(--accent-teal);font-size:1.1rem;">₹349</strong>
+                </div>
+            </div>
+
+            <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:18px;">
+                💡 <em>Guaranteed Lead Policy: If customer does not answer after 3 attempts or does not own the terrace, 100% lead credit is refunded to your account.</em>
+            </p>
+
+            <div style="display:flex;gap:10px;">
+                <button class="btn-primary" style="flex:1" onclick="confirmClaimLead()">
+                    Unlock Full Contact Details ➔
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="container footer-content">
+            <div>
+                <strong>IEMS — Intelligent Energy Management Simulator</strong>
+                <p style="margin-top:4px;font-size:0.8rem;color:var(--text-muted);">
+                    Decision-support platform grounded in real smart-meter and satellite irradiance data.
+                </p>
+            </div>
+            <div style="text-align:right;">
+                <p style="font-size:0.8rem;">Compliant with MNRE PM Surya Ghar & Indian DISCOM Net Metering Guidelines.</p>
+                <p style="font-size:0.75rem;color:var(--text-faint);margin-top:2px;">Capstone Project • Capstone 2026</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- App Data and Controller Scripts -->
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+
+</body>
+
+</html>
