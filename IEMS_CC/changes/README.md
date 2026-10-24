@@ -94,10 +94,6 @@ A modern, intuitive, decision-support interface for residential solar and batter
 ### Method 1: Double-Click Standalone (No Server Needed)
 Simply open `index.html` directly in any web browser:
 ```
-d:\PESU\Sem 7\capstone\changes\index.html
-```
-or
-```
 d:\PESU\Sem 7\capstone\IEMS_CC\changes\index.html
 ```
 The entire application runs 100% locally with all formulas, physics data, and interactive charts built-in.

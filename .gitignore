@@ -1,0 +1,24 @@
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+**/venv/
+
+# Python bytecode & caches
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Editor & IDE settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary & build files
+powershell.cmd
+*.log
+.DS_Store
+Thumbs.db

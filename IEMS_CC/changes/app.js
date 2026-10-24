@@ -14,6 +14,7 @@ const AppState = {
     subsidyEligible: true,
     discom: "BESCOM",
     activePortal: "homeowner", // "homeowner" | "installer"
+    compareFilter: "all", // "all" | "budget"
 
     // Financing state
     downPaymentPct: 10,
@@ -49,6 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initPortalSwitch();
     initThemeToggle();
     initCitySelector();
+    initDiscomCitySelector();
     initDiscomSelector();
     initWizardInputs();
     initFinancingSliders();
@@ -144,6 +146,9 @@ function initCitySelector() {
 
     citySelect.addEventListener("change", (e) => {
         AppState.city = e.target.value;
+        const discomCitySelect = document.getElementById("select-discom-city");
+        if (discomCitySelect) discomCitySelect.value = AppState.city;
+
         const cityData = SOLAR_DATA.cities[AppState.city];
         if (cityData && cityData.default_discom) {
             AppState.discom = cityData.default_discom;
@@ -174,6 +179,15 @@ function initCitySelector() {
                         });
                         AppState.city = closest;
                         citySelect.value = closest;
+                        const discomCitySelect = document.getElementById("select-discom-city");
+                        if (discomCitySelect) discomCitySelect.value = closest;
+
+                        const cityData = SOLAR_DATA.cities[closest];
+                        if (cityData && cityData.default_discom) {
+                            AppState.discom = cityData.default_discom;
+                            const discomSelect = document.getElementById("select-discom");
+                            if (discomSelect) discomSelect.value = AppState.discom;
+                        }
                         recalculateAll();
                         showToast(`Detected location: nearest solar station is ${closest}!`, "success");
                     },
@@ -185,6 +199,38 @@ function initCitySelector() {
             }
         });
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Feature 4: DISCOM City Selector
+// ─────────────────────────────────────────────────────────────────────────────
+function initDiscomCitySelector() {
+    const discomCitySelect = document.getElementById("select-discom-city");
+    if (!discomCitySelect) return;
+
+    discomCitySelect.innerHTML = "";
+    Object.keys(SOLAR_DATA.cities).forEach(cityName => {
+        const opt = document.createElement("option");
+        opt.value = cityName;
+        opt.textContent = `${cityName} (${SOLAR_DATA.cities[cityName].state})`;
+        if (cityName === AppState.city) opt.selected = true;
+        discomCitySelect.appendChild(opt);
+    });
+
+    discomCitySelect.addEventListener("change", (e) => {
+        AppState.city = e.target.value;
+        const citySelect = document.getElementById("select-city");
+        if (citySelect) citySelect.value = AppState.city;
+
+        const cityData = SOLAR_DATA.cities[AppState.city];
+        if (cityData && cityData.default_discom) {
+            AppState.discom = cityData.default_discom;
+            const discomSelect = document.getElementById("select-discom");
+            if (discomSelect) discomSelect.value = AppState.discom;
+        }
+        recalculateAll();
+        showToast(`Updated location to ${AppState.city} (${AppState.discom})`, "success");
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -381,7 +427,8 @@ function recalculateAll() {
 // Live Wizard Quick Assessment Card Update
 // ─────────────────────────────────────────────────────────────────────────────
 function updateWizardQuickMatchCard() {
-    const sys = AppState.systems[AppState.selectedSystemType] || AppState.systems.hybrid;
+    const budget = AppState.budgetCap;
+    let sys = AppState.systems[AppState.selectedSystemType] || AppState.systems.hybrid;
     
     let badgeText = "⚖️ Smart Hybrid Recommended";
     let descText = `⚖️ Balanced choice: Powers heavy day loads, stores afternoon surplus in ${sys.batteryKwh} kWh LiFePO4 battery, and wipes ~90% power bill with ${sys.backupHours} hrs night backup.`;
@@ -392,6 +439,29 @@ function updateWizardQuickMatchCard() {
     } else if (AppState.primaryGoal === "backup") {
         badgeText = "🔋 Maximum Outage Backup Focus";
         descText = `🔋 Maximum Resilience: Heavy ${sys.batteryKwh} kWh battery bank gives ${sys.backupHours}+ hours blackout autonomy (runs heavy appliances/AC) during severe load shedding.`;
+    }
+
+    // Maximum Budget Cap filtering
+    if (sys.netCapex > budget) {
+        const starter = AppState.systems.starter;
+        const hybrid = AppState.systems.hybrid;
+        if (AppState.selectedSystemType === "resilience" && hybrid && hybrid.netCapex <= budget) {
+            badgeText = `⚠️ Budget-Filtered: Smart Hybrid Fits ₹${budget.toLocaleString('en-IN')} Cap`;
+            descText = `⚖️ Resilience Pro (₹${AppState.systems.resilience.netCapex.toLocaleString('en-IN')}) exceeds your budget cap. Filtered to Smart Hybrid which fits within budget with essential outage backup!`;
+            sys = hybrid;
+        } else if (starter && starter.netCapex <= budget) {
+            badgeText = `⚠️ Budget-Filtered: Starter Eco Fits ₹${budget.toLocaleString('en-IN')} Cap`;
+            descText = `💰 Selected battery system exceeds your budget cap. Filtered to Starter Eco (₹${starter.netCapex.toLocaleString('en-IN')}) for maximum ROI within ₹${budget.toLocaleString('en-IN')}!`;
+            sys = starter;
+        } else {
+            badgeText = `⚠️ Exceeds ₹${budget.toLocaleString('en-IN')} Cap — Solar Loan Fit`;
+            descText = `⚡ Net cost (₹${sys.netCapex.toLocaleString('en-IN')}) exceeds your budget cap. Consider our 7.0% PM Surya Ghar loan with ₹${Math.round((sys.netCapex * 0.9 / 60) + (sys.netCapex * 0.9 * 0.07 / 12)).toLocaleString('en-IN')}/mo EMI!`;
+        }
+    } else {
+        const remainingBuffer = budget - sys.netCapex;
+        if (remainingBuffer > 0) {
+            badgeText += ` (₹${remainingBuffer.toLocaleString('en-IN')} buffer)`;
+        }
     }
 
     setElText("wizard-match-badge", badgeText);
@@ -646,23 +716,40 @@ function updateBudgetMatchCard() {
     let badgeText = "Best Budget Fit";
 
     if (AppState.primaryGoal === "savings") {
-        matched = starter;
-        badgeText = "Best Match for Max Savings & Fastest Payback";
-    } else if (AppState.primaryGoal === "backup") {
-        if (resilience.netCapex <= budget) {
-            matched = resilience;
-            badgeText = "Fits Budget: Maximum Outage Autonomy";
-        } else {
+        if (starter && starter.netCapex <= budget) {
+            matched = starter;
+            badgeText = "Best Match for Max Savings & Fastest Payback";
+        } else if (hybrid && hybrid.netCapex <= budget) {
             matched = hybrid;
-            badgeText = "Fits Budget: Recommended Hybrid for Essential Backup";
-        }
-    } else {
-        if (hybrid.netCapex <= budget) {
-            matched = hybrid;
-            badgeText = "Fits Budget: Recommended Balanced Choice";
+            badgeText = "Fits Budget: Recommended Hybrid";
         } else {
             matched = starter;
+            badgeText = "Lowest Upfront Investment (Exceeds Budget)";
+        }
+    } else if (AppState.primaryGoal === "backup") {
+        if (resilience && resilience.netCapex <= budget) {
+            matched = resilience;
+            badgeText = "Fits Budget: Maximum Outage Autonomy";
+        } else if (hybrid && hybrid.netCapex <= budget) {
+            matched = hybrid;
+            badgeText = "Fits Budget: Recommended Hybrid for Essential Backup";
+        } else if (starter && starter.netCapex <= budget) {
+            matched = starter;
+            badgeText = "Fits Budget: Starter Eco Grid-Tie";
+        } else {
+            matched = starter;
+            badgeText = "Lowest Upfront Investment (Exceeds Budget)";
+        }
+    } else {
+        if (hybrid && hybrid.netCapex <= budget) {
+            matched = hybrid;
+            badgeText = "Fits Budget: Recommended Balanced Choice";
+        } else if (starter && starter.netCapex <= budget) {
+            matched = starter;
             badgeText = "Fits Budget: Lowest Upfront Investment";
+        } else {
+            matched = starter;
+            badgeText = "Lowest Upfront Investment (Exceeds Budget)";
         }
     }
 
@@ -678,12 +765,24 @@ function updateBudgetMatchCard() {
     setElText("budget-matched-roof", `${matched.roofSqftRequired} sq. ft`);
 
     // Budget bar percentage
-    const budgetPct = Math.min(100, Math.round((matched.netCapex / budget) * 100));
+    const budgetPct = Math.round((matched.netCapex / budget) * 100);
     const budgetBar = document.getElementById("budget-utilization-bar");
     if (budgetBar) {
-        budgetBar.style.width = `${budgetPct}%`;
+        budgetBar.style.width = `${Math.min(100, budgetPct)}%`;
+        if (matched.netCapex <= budget) {
+            budgetBar.style.background = "linear-gradient(90deg,var(--accent-teal),var(--accent-gold))";
+        } else {
+            budgetBar.style.background = "var(--accent-red)";
+        }
     }
-    setElText("budget-utilization-text", `Uses ${budgetPct}% of your ₹${budget.toLocaleString('en-IN')} budget`);
+
+    if (matched.netCapex <= budget) {
+        const remaining = budget - matched.netCapex;
+        setElText("budget-utilization-text", `Uses ${budgetPct}% of your ₹${budget.toLocaleString('en-IN')} budget (₹${remaining.toLocaleString('en-IN')} buffer remaining)`);
+    } else {
+        const excess = matched.netCapex - budget;
+        setElText("budget-utilization-text", `Exceeds your ₹${budget.toLocaleString('en-IN')} budget cap by ₹${excess.toLocaleString('en-IN')} (${budgetPct}% capex)`);
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -719,6 +818,16 @@ function updateDiscomView(discomData) {
     setElText("discom-grid-stability", discomData.grid_stability_rating);
     setElHtml("discom-notes-text", discomData.notes);
 
+    // Keep dropdowns in sync
+    const discomSelect = document.getElementById("select-discom");
+    if (discomSelect && discomSelect.value !== AppState.discom) {
+        discomSelect.value = AppState.discom;
+    }
+    const discomCitySelect = document.getElementById("select-discom-city");
+    if (discomCitySelect && discomCitySelect.value !== AppState.city) {
+        discomCitySelect.value = AppState.city;
+    }
+
     // Calculate export revenue demonstration
     const sys = AppState.systems[AppState.selectedSystemType] || AppState.systems.hybrid;
     const annualExportRevenue = Math.round(sys.exportedKwh * discomData.export_rate_inr);
@@ -736,12 +845,39 @@ function updateComparisonView() {
     const h = AppState.systems.hybrid;
     const r = AppState.systems.resilience;
 
+    // Count how many systems fit within current budget cap
+    const budget = AppState.budgetCap;
+    const systemsList = [s, h, r].filter(Boolean);
+    const withinBudgetList = systemsList.filter(sys => sys.netCapex <= budget);
+    const withinBudgetCount = withinBudgetList.length;
+
+    setElText("filter-budget-cap-val", `₹${budget.toLocaleString('en-IN')}`);
+    setElText("filter-budget-summary-val", `₹${budget.toLocaleString('en-IN')}`);
+    setElText("filter-budget-count", `${withinBudgetCount}`);
+
+    const summaryEl = document.getElementById("compare-budget-summary");
+    if (summaryEl) {
+        summaryEl.innerHTML = `<span><strong>${withinBudgetCount} of 3</strong> systems fit within your <strong style="color:var(--accent-teal);">₹${budget.toLocaleString('en-IN')}</strong> budget cap</span>`;
+    }
+
     renderCompareCard("starter", s);
     renderCompareCard("hybrid", h);
     renderCompareCard("resilience", r);
 }
 
+function setCompareFilter(filterType) {
+    AppState.compareFilter = filterType;
+
+    const btnAll = document.getElementById("btn-filter-all");
+    const btnBudget = document.getElementById("btn-filter-budget");
+    if (btnAll) btnAll.classList.toggle("active", filterType === "all");
+    if (btnBudget) btnBudget.classList.toggle("active", filterType === "budget");
+
+    updateComparisonView();
+}
+
 function renderCompareCard(key, sys) {
+    if (!sys) return;
     setElText(`cmp-${key}-title`, sys.name);
     setElText(`cmp-${key}-specs`, `${sys.panelKw} kW Panel | ${sys.batteryKwh > 0 ? sys.batteryKwh + ' kWh Battery' : 'No Battery'}`);
     setElText(`cmp-${key}-net`, `₹${sys.netCapex.toLocaleString('en-IN')}`);
@@ -753,10 +889,39 @@ function renderCompareCard(key, sys) {
     setElText(`cmp-${key}-backup`, sys.batteryKwh > 0 ? `${sys.backupHours} Hours Backup` : "0 Hrs (Shuts down in blackout)");
     setElText(`cmp-${key}-roof`, `${sys.roofSqftRequired} sq. ft`);
 
-    // Winner highlight based on goal
+    // Budget Cap compatibility badge
+    const budgetBadge = document.getElementById(`cmp-${key}-budget-badge`);
+    const budget = AppState.budgetCap;
+    const fitsBudget = sys.netCapex <= budget;
+    if (budgetBadge) {
+        if (fitsBudget) {
+            const buffer = budget - sys.netCapex;
+            budgetBadge.className = "compare-budget-badge within-budget";
+            budgetBadge.innerHTML = `✓ Within Budget Cap (₹${buffer.toLocaleString('en-IN')} buffer)`;
+        } else {
+            const excess = sys.netCapex - budget;
+            budgetBadge.className = "compare-budget-badge exceeds-budget";
+            budgetBadge.innerHTML = `⚠️ Exceeds Budget Cap (+₹${excess.toLocaleString('en-IN')})`;
+        }
+    }
+
+    // Filter effect when user clicks "Within Budget Cap"
     const cardEl = document.getElementById(`cmp-card-${key}`);
     const bannerEl = document.getElementById(`cmp-banner-${key}`);
-    
+
+    if (cardEl) {
+        if (AppState.compareFilter === "budget") {
+            if (!fitsBudget) {
+                cardEl.classList.add("card-filtered-out");
+            } else {
+                cardEl.classList.remove("card-filtered-out");
+            }
+        } else {
+            cardEl.classList.remove("card-filtered-out");
+        }
+    }
+
+    // Winner highlight based on goal
     let isWinner = false;
     if (AppState.primaryGoal === "savings" && key === "starter") isWinner = true;
     else if (AppState.primaryGoal === "balanced" && key === "hybrid") isWinner = true;
@@ -1237,6 +1402,10 @@ function renderLoanVsSavingsSVG(containerId, monthlySavings, monthlyEmi) {
 function initLeadsPortal() {
     const cityFilter = document.getElementById("filter-lead-city");
     if (cityFilter) {
+        cityFilter.innerHTML = `<option value="all">All Locations</option>`;
+        Object.keys(SOLAR_DATA.cities).forEach(cityName => {
+            cityFilter.innerHTML += `<option value="${cityName}">${cityName}</option>`;
+        });
         cityFilter.addEventListener("change", () => renderLeadsList());
     }
 
@@ -1285,7 +1454,7 @@ function renderLeadsList() {
 
     container.innerHTML = "";
     if (filtered.length === 0) {
-        container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">No leads match the selected filter. Try selecting 'All Cities'.</div>`;
+        container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">No leads match the selected filter. Try selecting 'All Locations'.</div>`;
         return;
     }
 
@@ -1307,8 +1476,9 @@ function renderLeadsList() {
                     </div>
                 </div>
 
-                <div class="installer-badges">
+                <div class="installer-badges" style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;">
                     ${(lead.verification_tags || ["OTP Verified"]).map(t => `<span class="badge-mini highlight">✓ ${t}</span>`).join('')}
+                    ${lead.assigned_partner ? `<span class="badge-mini" style="background:var(--accent-teal-tint);color:var(--accent-teal);border:1px solid rgba(13,148,136,0.3)">🤝 Partner: ${lead.assigned_partner}</span>` : ''}
                 </div>
 
                 <div class="lead-specs-table">
@@ -1369,26 +1539,112 @@ function initModals() {
     });
 }
 
-function openSurveyModal(installerName = "SunShine CleanTech EPC", installerId = "INST-001") {
+function openSurveyModal(installerName = "", installerId = "") {
     const modal = document.getElementById("modal-survey-quote");
     if (!modal) return;
 
+    const userCity = AppState.city;
+    setElText("survey-modal-city-badge", userCity);
+
+    // Populate the partners dropdown based on the location previously given (AppState.city)
+    populateSurveyPartners(installerId, installerName);
+
     const sys = AppState.systems[AppState.selectedSystemType] || AppState.systems.hybrid;
-    setElText("survey-modal-installer", installerName);
     
     // Auto-fill system recommendation summary
     const specField = document.getElementById("survey-field-system");
     if (specField) {
-        specField.value = `${sys.name} (${sys.panelKw} kW Panel + ${sys.batteryKwh} kWh Battery)`;
+        specField.value = `${sys.name} (${sys.panelKw} kW Panel + ${sys.batteryKwh > 0 ? sys.batteryKwh + ' kWh Battery' : 'Grid-Tie'})`;
     }
 
     const cityField = document.getElementById("survey-field-city");
-    if (cityField) cityField.value = AppState.city;
+    if (cityField) cityField.value = userCity;
 
     const billField = document.getElementById("survey-field-bill");
     if (billField) billField.value = AppState.monthlyBill;
 
     modal.classList.add("open");
+}
+
+function populateSurveyPartners(preferredId = "", preferredName = "") {
+    const partnerSelect = document.getElementById("survey-partner-select");
+    if (!partnerSelect) return;
+
+    const userCity = AppState.city;
+    partnerSelect.innerHTML = "";
+
+    // Filter installers based on location user gave previously
+    let matchedInstallers = SOLAR_DATA.installers.filter(i => 
+        i.city === userCity || (i.service_areas && i.service_areas.includes(userCity))
+    );
+
+    // If none specifically match city, fallback to all installers
+    if (matchedInstallers.length === 0) {
+        matchedInstallers = SOLAR_DATA.installers;
+    }
+
+    // Add local options
+    matchedInstallers.forEach(inst => {
+        const opt = document.createElement("option");
+        opt.value = inst.id;
+        opt.textContent = `${inst.name} (${inst.rating}★ | ${inst.completed_projects}+ Rooftops | ${inst.badges[0] || 'Empanelled'})`;
+        opt.dataset.name = inst.name;
+        partnerSelect.appendChild(opt);
+    });
+
+    // Also add option for other verified national partners
+    const otherInstallers = SOLAR_DATA.installers.filter(i => !matchedInstallers.some(m => m.id === i.id));
+    if (otherInstallers.length > 0) {
+        const optGroup = document.createElement("optgroup");
+        optGroup.label = "── Other Empanelled Partners ──";
+        otherInstallers.forEach(inst => {
+            const opt = document.createElement("option");
+            opt.value = inst.id;
+            opt.textContent = `${inst.name} [${inst.city}] (${inst.rating}★)`;
+            opt.dataset.name = inst.name;
+            optGroup.appendChild(opt);
+        });
+        partnerSelect.appendChild(optGroup);
+    }
+
+    // Select preferred if passed, else default to first matched installer
+    let targetInstaller = matchedInstallers[0];
+    if (preferredId && SOLAR_DATA.installers.some(i => i.id === preferredId)) {
+        partnerSelect.value = preferredId;
+        targetInstaller = SOLAR_DATA.installers.find(i => i.id === preferredId);
+    } else if (preferredName && SOLAR_DATA.installers.some(i => i.name.toLowerCase().includes(preferredName.toLowerCase()))) {
+        targetInstaller = SOLAR_DATA.installers.find(i => i.name.toLowerCase().includes(preferredName.toLowerCase()));
+        partnerSelect.value = targetInstaller.id;
+    } else {
+        partnerSelect.value = targetInstaller.id;
+    }
+
+    updateSurveyPartnerDetails(targetInstaller);
+
+    partnerSelect.onchange = (e) => {
+        const selectedId = e.target.value;
+        const inst = SOLAR_DATA.installers.find(i => i.id === selectedId) || matchedInstallers[0];
+        updateSurveyPartnerDetails(inst);
+    };
+}
+
+function updateSurveyPartnerDetails(inst) {
+    if (!inst) return;
+    setElText("survey-modal-installer", inst.name);
+    
+    const detailsBox = document.getElementById("survey-partner-details-box");
+    if (detailsBox) {
+        detailsBox.innerHTML = `
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                <span class="badge-tag" style="font-size:0.7rem;">⭐ ${inst.rating} / 5.0 (${inst.reviews_count} Reviews)</span>
+                <span class="badge-mini highlight" style="font-size:0.7rem;">⚡ ${inst.completed_projects}+ Installations</span>
+                <span class="badge-mini" style="font-size:0.7rem;background:var(--accent-teal-tint);color:var(--accent-teal);">⏱️ ~${inst.avg_quote_turnaround_hours}h Turnaround</span>
+            </div>
+            <div style="color:var(--text-muted);font-size:0.75rem;">
+                🛡️ <strong>Warranty:</strong> ${inst.warranty} | 🏷️ <strong>Pricing:</strong> ${inst.pricing_tier}
+            </div>
+        `;
+    }
 }
 
 function submitSurveyQuote(e) {
@@ -1400,6 +1656,10 @@ function submitSurveyQuote(e) {
     const bill = parseFloat(document.getElementById("survey-field-bill")?.value || AppState.monthlyBill);
     const system = document.getElementById("survey-field-system")?.value || "3.5 kW Hybrid Solar";
     const note = document.getElementById("survey-input-notes")?.value || "Requested site survey & engineering quotation.";
+
+    const partnerSelect = document.getElementById("survey-partner-select");
+    const selectedPartnerId = partnerSelect?.value;
+    const selectedPartner = SOLAR_DATA.installers.find(i => i.id === selectedPartnerId) || SOLAR_DATA.installers[0];
 
     // 1. Add as a live new Lead into the B2B Leads Store!
     const newLead = {
@@ -1416,11 +1676,13 @@ function submitSurveyQuote(e) {
         recommended_system: system,
         budget_inr: AppState.budgetCap,
         subsidy_eligible: AppState.subsidyEligible,
-        intent_score: 97, // High intent verified
+        assigned_partner: selectedPartner.name,
+        assigned_partner_id: selectedPartner.id,
+        intent_score: 98, // High intent verified
         created_at: "Just now",
         lead_price_inr: 399,
-        status: "New & Verified",
-        verification_tags: ["Instant Web Enquiry", "High Intent", "Ready for Survey"],
+        status: "New & Assigned",
+        verification_tags: ["Instant Web Enquiry", `Assigned: ${selectedPartner.name}`, "Ready for Site Survey"],
         customer_note: note,
         claimed_by_me: false
     };
@@ -1429,8 +1691,12 @@ function submitSurveyQuote(e) {
     saveLeads();
 
     // 2. Also send to backend FastAPI endpoint if alive
+    const API_BASE = (window.location && window.location.origin && window.location.origin.startsWith("http")) 
+        ? window.location.origin 
+        : "http://localhost:8000";
+
     try {
-        fetch("http://localhost:8000/api/leads", {
+        fetch(`${API_BASE}/api/leads`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -1442,6 +1708,7 @@ function submitSurveyQuote(e) {
                 budget_inr: AppState.budgetCap,
                 roof_sqft: AppState.roofAreaSqft,
                 subsidy_eligible: AppState.subsidyEligible,
+                assigned_partner: selectedPartner.name,
                 notes: note
             })
         }).catch(err => console.log("Backend offline, lead stored locally in browser"));
@@ -1449,7 +1716,7 @@ function submitSurveyQuote(e) {
 
     // Close modal & celebrate
     document.getElementById("modal-survey-quote")?.classList.remove("open");
-    showToast(`Quotation & Site Visit Request submitted! Your enquiry was also posted to verified installers in ${city}.`, "success");
+    showToast(`Survey Request submitted! Connected with ${selectedPartner.name} in ${city}.`, "success");
     
     // Refresh leads view if open
     renderLeadsList();
@@ -1537,7 +1804,11 @@ function setElHtml(id, html) {
 // Check Backend Health (Optional connection to FastAPI app.py)
 function checkBackendHealth() {
     const badge = document.getElementById("backend-status-badge");
-    fetch("http://localhost:8000/api/health", { method: "GET" })
+    const API_BASE = (window.location && window.location.origin && window.location.origin.startsWith("http")) 
+        ? window.location.origin 
+        : "http://localhost:8000";
+
+    fetch(`${API_BASE}/api/health`, { method: "GET" })
         .then(res => res.json())
         .then(data => {
             if (badge) {
