@@ -100,3 +100,49 @@ The Solar Intelligence frontend (`changes/index.html`) can also run **standalone
 | `Cannot be loaded because running scripts is disabled on this system` (PowerShell) | Run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` in your PowerShell terminal, then re-run `.\venv\Scripts\Activate.ps1`. |
 | Port 8000 is already in use | Run `uvicorn app:app --reload --port 8080` instead. All web interfaces will dynamically adapt to the active port. |
 | Parquet file read error | Ensure `pyarrow` is installed (`pip install pyarrow>=12.0.0`). Pre-processed parquet files are located in `data/processed/`, `data/solar/`, and `models/`. |
+
+---
+
+## 🧪 Automated Testing
+
+The project has a fast, deterministic pytest suite in `tests/`. It covers:
+
+- Battery charge/discharge limits, SOC bounds, and efficiency
+- Tariff slabs, monthly billing, and outage behavior
+- Gymnasium environment reset/step contracts and energy-flow balance
+- Rule-based controller decisions
+- CAPEX, subsidy, NPV, IRR, and payback calculations
+- FastAPI health, lead submission, and request validation contracts
+
+Run the normal test suite from the project root:
+
+```bash
+pytest -q
+```
+
+Run it with source coverage:
+
+```bash
+pytest --cov=src --cov-report=term-missing -q
+```
+
+The pytest suite intentionally does not train a DQN, fetch NASA data, solve
+thousands of MPC problems, or run a full NSGA-II search. Those are acceptance
+and demonstration activities that are run explicitly:
+
+```bash
+python scripts/03_battery_grid_check.py
+python scripts/04_environment_check.py
+python scripts/05_rule_based_check.py
+python scripts/06_sizing_pipeline.py
+python scripts/07_train_dqn.py              # quick smoke test
+python scripts/08_mpc_check.py
+python scripts/09_compare_controllers.py
+python scripts/10_nsga2_sizing.py           # quick smoke test by default
+python scripts/11_validate_sizing.py
+python scripts/12_live_deployment_demo.py
+```
+
+The `tests/` suite is suitable for every code change and continuous
+integration. The longer scripts should be run when changing the associated
+model, controller, optimization, or deployment behavior.
