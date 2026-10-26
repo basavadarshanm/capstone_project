@@ -245,7 +245,33 @@
                             </label>
                         </div>
 
-                        <a href="#section-compare" class="btn-primary" style="text-decoration:none;">
+                        <!-- Real AI Simulation Trigger Button -->
+                        <button type="button" id="btn-run-ai-sizing" class="btn-ai-run">
+                            <span>⚡</span> Run Real AI Sizing (Genetic Sizing + DQN Validation)
+                        </button>
+
+                        <!-- Live Progress Status Container (animated during execution) -->
+                        <div id="ai-sim-progress-box" class="ai-progress-card" style="display:none;">
+                            <div class="ai-progress-header">
+                                <div id="ai-spinner-icon" class="ai-spinner"></div>
+                                <div style="flex:1;">
+                                    <div id="ai-progress-title" style="font-weight:700;font-size:0.85rem;color:var(--text-main);">Running Multi-Stage AI Pipeline...</div>
+                                    <div id="ai-progress-desc" style="font-size:0.75rem;color:var(--text-muted);">Initializing simulation environment...</div>
+                                </div>
+                                <span id="ai-progress-timer" class="mono" style="font-size:0.82rem;font-weight:700;color:var(--accent-gold);">0s</span>
+                            </div>
+                            <div class="ai-progress-bar-bg">
+                                <div id="ai-progress-bar-fill" class="ai-progress-bar-fill" style="width:10%;"></div>
+                            </div>
+                            <div class="ai-progress-steps">
+                                <span id="step-kmeans" class="prog-step active">1. K-Means Load</span>
+                                <span id="step-solar" class="prog-step">2. NASA Solar</span>
+                                <span id="step-nsga" class="prog-step">3. 30-Gen NSGA-II</span>
+                                <span id="step-dqn" class="prog-step">4. DQN Dispatch</span>
+                            </div>
+                        </div>
+
+                        <a href="#section-compare" class="btn-primary" style="text-decoration:none;margin-top:10px;">
                             View Detailed System Breakdown ➔
                         </a>
                     </div>
@@ -464,6 +490,26 @@
                     </div>
                     <div id="compare-budget-summary" style="font-size:0.82rem;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
                         <span>Maximum Budget Cap: <strong id="filter-budget-summary-val" style="color:var(--accent-teal);">₹2,50,000</strong></span>
+                    </div>
+                </div>
+
+                <!-- AI Validation & Deep Dispatch Banner (Dynamically populated after simulation) -->
+                <div id="ai-validation-results-card" class="ai-validation-banner" style="display:none;margin-bottom:28px;">
+                    <div class="ai-validation-header">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <span class="badge-mini" style="background:rgba(16,185,129,0.15);color:#10b981;border:1px solid #10b981;font-weight:700;">
+                                ✓ Verified by NSGA-II & 17-Feature DQN Neural Network
+                            </span>
+                            <span id="ai-verdict-tag" class="badge-mini highlight" style="font-weight:700;">
+                                Recommended: Smart Hybrid System
+                            </span>
+                        </div>
+                        <span id="ai-sim-runtime-tag" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">
+                            Validated in 60s
+                        </span>
+                    </div>
+                    <div class="ai-validation-body" id="ai-validation-text" style="font-size:0.85rem;line-height:1.6;color:var(--text-main);">
+                        <!-- Dynamic details injected by app.js -->
                     </div>
                 </div>
 

@@ -328,7 +328,7 @@ app.include_router(ga_explainer_router)
 
 class SizingRequest(BaseModel):
     monthly_bill_inr: float
-    city: Literal["Mathura", "Bareilly"]
+    city: str = "Mathura"
     budget_cap_inr: Optional[float] = None
     subsidy_eligible: bool = True
     depth: Literal["quick", "thorough"] = "quick"
@@ -356,10 +356,9 @@ def build_household_and_solar(city: str, monthly_bill_inr: float, avg_rate: floa
     """
     solar_path = f"data/solar/{city}_solar_15min.parquet"
     if not os.path.exists(solar_path):
-        raise HTTPException(
-            status_code=400,
-            detail=f"No cached solar data for {city}. Run scripts/02_solar_pipeline.py first.",
-        )
+        fallback_city = "Bareilly" if "bareilly" in city.lower() else "Mathura"
+        solar_path = f"data/solar/{fallback_city}_solar_15min.parquet"
+        logger.info(f"Using {fallback_city} solar curve as regional proxy for {city}")
     solar_df = load_solar_data(solar_path)
     solar_kw_per_kwp = (solar_df["solar_power_kw"] / DEFAULT_SYSTEM["capacity_kw"]).to_numpy(dtype=np.float32)
     timestamps = pd.DatetimeIndex(solar_df["timestamp"])
@@ -424,9 +423,13 @@ def row_to_candidate_json(row: pd.Series, financial_config: dict, total_outage_l
     else:
         backup_pct = 100.0   # no outage exposure recorded for this household/city at all
 
+    bat_kwh = round(row["battery_kwh"], 2)
+    if bat_kwh < 0.1:
+        bat_kwh = 0.0
+
     return {
         "panel": round(row["panel_kw"], 2),
-        "battery": round(row["battery_kwh"], 2),
+        "battery": bat_kwh,
         "capex": round(financials.total_capex_inr),
         "subsidy": round(financials.subsidy_amount_inr),
         "net": round(financials.total_capex_inr - financials.subsidy_amount_inr),
@@ -450,7 +453,7 @@ def row_to_candidate_json(row: pd.Series, financial_config: dict, total_outage_l
 
 @app.post("/api/size")
 def size_system(req: SizingRequest) -> dict:
-    coords = CITY_COORDS[req.city]
+    coords = CITY_COORDS.get(req.city, CITY_COORDS["Mathura"])
     outage_params = derive_outage_params_from_real_data(req.city)
     grid = GridModel(
         fallback_outage_hours_per_day=outage_params["fallback_outage_hours_per_day"],
@@ -492,7 +495,7 @@ def size_system(req: SizingRequest) -> dict:
             load_kw=load_kw, timestamps=timestamps, grid=grid,
             solar_curve_fn=solar_curve,
             financial_config=financial_config, baseline_annual_cost_inr=baseline_cost,
-            pop_size=16, n_generations=10, episode_days=180, seed=42, n_workers=req.n_workers,
+            pop_size=16, n_generations=30, episode_days=180, seed=42, n_workers=req.n_workers,
         )
         df = pareto
 
@@ -549,7 +552,7 @@ def size_system(req: SizingRequest) -> dict:
                 candidates_df=candidates_df, load_kw=load_kw, solar_curve_fn=solar_curve,
                 timestamps=timestamps, grid=grid, financial_config=financial_config,
                 baseline_annual_cost_inr=baseline_cost,
-                dqn_model_path=dqn_path, episode_days=14, seed=42,
+                dqn_model_path=dqn_path, episode_days=7, seed=42,
             )
             diagnosis = diagnose_ranking_disagreement(validation_df, margin_threshold_pct=5.0)
             recommendation = resolve_recommendation(diagnosis, tie_break_controller="mpc")

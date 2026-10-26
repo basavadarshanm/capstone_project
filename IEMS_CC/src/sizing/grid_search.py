@@ -419,6 +419,16 @@ def top_recommendations(df: pd.DataFrame, n: int = 3) -> dict:
     so calling this with "thorough" depth's DataFrame previously raised
     KeyError: 'outage_steps_covered'.
 
+    Distinctness enforcement (n=1 mode)
+    ------------------------------------
+    When called with n=1 (the API's normal usage), the three results should
+    ideally be DIFFERENT systems so the user sees meaningful variety across
+    Starter Eco / Smart Hybrid / Resilience Pro cards. If the same Pareto
+    row wins multiple criteria (common when the front has few points or one
+    solution dominates), the secondary winner falls back to the next-best
+    candidate from that criterion's ranking. Priority order for resolving
+    ties: best_npv wins first, then best_backup, then fastest_payback.
+
     Returns
     -------
     dict with keys 'fastest_payback', 'best_npv', 'best_backup', each a
@@ -432,11 +442,11 @@ def top_recommendations(df: pd.DataFrame, n: int = 3) -> dict:
     if "annual_unmet_load_kwh" in df.columns:
         # Lower unmet load = better backup coverage. Present in both
         # grid_search's and nsga2_sizing's output — the reliable choice.
-        best_backup = df.nsmallest(n, "annual_unmet_load_kwh")
+        backup_ranked = df.nsmallest(max(n, len(df)), "annual_unmet_load_kwh")
     elif "outage_steps_covered" in df.columns:
         # Fallback for any caller whose DataFrame only has this older
         # grid_search-specific column (higher = better here).
-        best_backup = df.nlargest(n, "outage_steps_covered")
+        backup_ranked = df.nlargest(max(n, len(df)), "outage_steps_covered")
     else:
         raise KeyError(
             "top_recommendations(): DataFrame has neither "
@@ -444,8 +454,108 @@ def top_recommendations(df: pd.DataFrame, n: int = 3) -> dict:
             "cannot determine a backup-coverage ranking."
         )
 
+    npv_ranked = df.nlargest(max(n, len(df)), "npv_25yr_inr")
+    payback_ranked = payback_candidates.nsmallest(max(n, len(payback_candidates)), "payback_years")
+
+    if n == 1 and len(df) >= 3:
+        # ── Enforce physical configuration distinctness across the 3 tiers ──
+        # In a multi-objective Pareto front, neighboring individuals often share
+        # identical or near-identical (panel_kw, battery_kwh) points (e.g. 10kW + 19.5kWh
+        # vs 9.9kW + 19.4kWh). If best_npv and best_backup pick these neighbors, the
+        # user sees identical cards for Smart Hybrid and Resilience Pro!
+        #
+        # Physical distinctness requires:
+        #   abs(panel_kw_diff) >= 0.75 kW  OR  abs(battery_kwh_diff) >= 2.0 kWh
+        #
+        # Tier selection logic:
+        # 1. Best Backup (Resilience Pro): Pick candidate with lowest unmet load
+        #    (tie-broken by highest battery capacity). This guarantees Resilience Pro
+        #    truly maximizes blackout resilience.
+        # 2. Best NPV (Smart Hybrid): Pick the candidate with highest 25-yr NPV that
+        #    is physically distinct from Best Backup. This ensures Smart Hybrid is a
+        #    distinct, economically balanced sweet spot.
+        # 3. Fastest Payback (Starter Eco): Pick the candidate with shortest payback
+        #    period that is physically distinct from both Best Backup and Best NPV.
+
+        def are_configs_distinct(row_a: pd.Series, row_b: pd.Series, min_panel: float = 0.75, min_battery: float = 2.0) -> bool:
+            dp = abs(float(row_a["panel_kw"]) - float(row_b["panel_kw"]))
+            db = abs(float(row_a["battery_kwh"]) - float(row_b["battery_kwh"]))
+            return (dp >= min_panel) or (db >= min_battery)
+
+        # 1. Best Backup (Resilience Pro)
+        # Blackout autonomy and emergency resilience during power cuts are primarily
+        # governed by battery capacity (battery_kwh) — solar panels produce 0 kW during
+        # evening and nighttime blackouts. Therefore, Resilience Pro MUST have the maximum
+        # battery storage bank (and lowest unmet load) to deliver the longest backup hours.
+        backup_sort_cols = ["battery_kwh", "annual_unmet_load_kwh"] if "annual_unmet_load_kwh" in df.columns else ["battery_kwh", "outage_steps_covered"]
+        backup_ascending = [False, True] if "annual_unmet_load_kwh" in df.columns else [False, False]
+        backup_candidates_sorted = df.sort_values(by=backup_sort_cols, ascending=backup_ascending)
+        best_backup_row = backup_candidates_sorted.iloc[0:1]
+        max_bat = float(best_backup_row.iloc[0]["battery_kwh"])
+
+        # 2. Best NPV (Smart Hybrid) — Solar + Lithium Storage Sweet Spot
+        # In financial NPV calculations, pure grid-tie (0 battery) often has higher raw NPV
+        # because batteries cost ₹15k/kWh. However, Smart Hybrid is explicitly tagged as
+        # "SOLAR + LITHIUM STORAGE" and represents the economic sweet spot of owning a battery.
+        # It MUST pick the highest NPV candidate that actually has a battery (battery_kwh >= 0.5),
+        # with battery_kwh <= Resilience Pro's battery.
+        npv_sorted = df.sort_values(by="npv_25yr_inr", ascending=False)
+        has_battery = (npv_sorted["battery_kwh"] >= 0.5) & (npv_sorted["battery_kwh"] <= max_bat + 0.1)
+        hybrid_candidates = npv_sorted[has_battery] if has_battery.any() else npv_sorted
+
+        best_npv_row = None
+        for idx in hybrid_candidates.index:
+            cand = hybrid_candidates.loc[idx]
+            if are_configs_distinct(cand, best_backup_row.iloc[0]):
+                best_npv_row = hybrid_candidates.loc[[idx]]
+                break
+        if best_npv_row is None:
+            # Fallback if front is very narrow: pick next different index
+            for idx in npv_sorted.index:
+                if idx != best_backup_row.index[0]:
+                    best_npv_row = npv_sorted.loc[[idx]]
+                    break
+        if best_npv_row is None:
+            best_npv_row = npv_sorted.iloc[0:1]
+
+        # 3. Fastest Payback (Starter Eco) — Grid-Connected Only
+        # Starter Eco represents the pure grid-tie tier (minimal/zero battery, fastest payback).
+        # It prioritizes candidates with battery_kwh <= 0.5 for lowest upfront capex.
+        payback_sorted = payback_candidates.sort_values(by=["payback_years", "total_capex_inr"], ascending=[True, True])
+        is_grid_tie = payback_sorted["battery_kwh"] <= 0.5
+        starter_candidates = payback_sorted[is_grid_tie] if is_grid_tie.any() else payback_sorted
+
+        best_payback_row = None
+        for idx in starter_candidates.index:
+            cand = starter_candidates.loc[idx]
+            if are_configs_distinct(cand, best_backup_row.iloc[0]) and are_configs_distinct(cand, best_npv_row.iloc[0]):
+                best_payback_row = starter_candidates.loc[[idx]]
+                break
+        if best_payback_row is None:
+            for idx in payback_sorted.index:
+                cand = payback_sorted.loc[idx]
+                if are_configs_distinct(cand, best_backup_row.iloc[0]) and are_configs_distinct(cand, best_npv_row.iloc[0]):
+                    best_payback_row = payback_sorted.loc[[idx]]
+                    break
+        if best_payback_row is None:
+            # Fallback: pick any index not yet used
+            used = {best_backup_row.index[0], best_npv_row.index[0]}
+            for idx in payback_sorted.index:
+                if idx not in used:
+                    best_payback_row = payback_sorted.loc[[idx]]
+                    break
+        if best_payback_row is None:
+            best_payback_row = payback_sorted.iloc[0:1]
+
+        return {
+            "fastest_payback": best_payback_row,
+            "best_npv":        best_npv_row,
+            "best_backup":     best_backup_row,
+        }
+
+    # Default: no distinctness enforcement (n > 1 or very small front)
     return {
-        "fastest_payback": payback_candidates.nsmallest(n, "payback_years"),
-        "best_npv":         df.nlargest(n, "npv_25yr_inr"),
-        "best_backup":      best_backup,
-    }
+        "fastest_payback": payback_ranked.head(n),
+        "best_npv":         npv_ranked.head(n),
+        "best_backup":      backup_ranked.head(n),
+    }

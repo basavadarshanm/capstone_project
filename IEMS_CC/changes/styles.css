@@ -1634,3 +1634,152 @@ body.dark-mode .tab-link.active {
         border: 1px solid #CCCCCC !important;
     }
 }
+
+/* AI Simulation Run Button & Progress Styles */
+.btn-ai-run {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 14px;
+    padding: 13px 18px;
+    background: linear-gradient(135deg, #F59E0B, #D97706);
+    color: #FFFFFF;
+    font-family: var(--font-heading);
+    font-size: 0.92rem;
+    font-weight: 700;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+    transition: var(--transition);
+}
+.btn-ai-run:hover:not(:disabled) {
+    background: linear-gradient(135deg, #D97706, #B45309);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(245, 158, 11, 0.45);
+}
+.btn-ai-run:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.ai-progress-card {
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: var(--bg-card-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    animation: fadeIn 0.3s ease;
+}
+
+.ai-progress-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.ai-spinner {
+    width: 22px;
+    height: 22px;
+    border: 3px solid rgba(245, 158, 11, 0.25);
+    border-top-color: var(--accent-gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+}
+
+.ai-spinner-done {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-teal);
+    color: #ffffff;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: 700;
+    animation: none;
+    flex-shrink: 0;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.ai-progress-bar-bg {
+    width: 100%;
+    height: 6px;
+    background: var(--border-color);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.ai-progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-gold), var(--accent-teal));
+    border-radius: 999px;
+    transition: width 0.4s ease;
+}
+
+.ai-progress-steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.prog-step {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text-faint);
+    padding: 4px 6px;
+    text-align: center;
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    transition: var(--transition);
+}
+
+.prog-step.active {
+    color: var(--accent-gold-text);
+    background: var(--accent-gold-tint);
+    border-color: var(--accent-gold);
+}
+
+.prog-step.done {
+    color: var(--accent-teal-text);
+    background: var(--accent-teal-tint);
+    border-color: var(--accent-teal);
+}
+
+/* AI Validation Banner in Compare Section */
+.ai-validation-banner {
+    background: var(--bg-card);
+    border: 2px solid var(--accent-teal);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    box-shadow: 0 10px 25px -5px rgba(13, 148, 136, 0.15);
+    animation: fadeIn 0.4s ease;
+}
+
+.ai-validation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
