@@ -40,8 +40,13 @@ const AppState = {
         financialProjection: null,
         cashflowComparison: null,
         loanVsSavings: null
-    }
+    },
+
+    calculationTimer: null,
+    calculationRunId: 0
 };
+
+const CALCULATION_DELAY_MS = 60000;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Initialization
@@ -57,6 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initInstallerMarketplace();
     initLeadsPortal();
     initModals();
+    initFeatureTabs();
 
     // Load persisted leads or fallback to sample
     loadLeads();
@@ -100,6 +106,96 @@ function initPortalSwitch() {
         renderLeadsList();
         showToast("Switched to Solar Installer B2B Lead Hub", "info");
     });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Feature Navigation
+// ─────────────────────────────────────────────────────────────────────────────
+function initFeatureTabs() {
+    const homeownerViews = document.getElementById("homeowner-views");
+    const compareSection = document.getElementById("section-compare");
+    const budgetSection = document.getElementById("section-budget");
+    if (homeownerViews && compareSection && budgetSection) {
+        homeownerViews.insertBefore(compareSection, budgetSection);
+    }
+
+    const tabs = Array.from(document.querySelectorAll(".tab-link"));
+    const sections = tabs
+        .map(tab => document.querySelector(tab.getAttribute("href")))
+        .filter(Boolean);
+
+    if (!tabs.length || !sections.length) return;
+
+    let navigationLock = null;
+    let navigationTimer = null;
+
+    const setActiveTab = (sectionId) => {
+        tabs.forEach(tab => {
+            const isActive = tab.getAttribute("href") === `#${sectionId}`;
+            tab.classList.toggle("active", isActive);
+            tab.setAttribute("aria-current", isActive ? "page" : "false");
+        });
+    };
+
+    const finishNavigation = () => {
+        if (!navigationLock) return;
+        const targetId = navigationLock;
+        navigationLock = null;
+        if (navigationTimer) clearTimeout(navigationTimer);
+        navigationTimer = null;
+        setActiveTab(targetId);
+    };
+
+    const updateActiveTabFromScroll = () => {
+        if (navigationLock) return;
+
+        const headerOffset = 145;
+        let currentSection = sections[0];
+        sections.forEach(section => {
+            if (section.getBoundingClientRect().top <= headerOffset + 20) {
+                currentSection = section;
+            }
+        });
+        setActiveTab(currentSection.id);
+    };
+
+    tabs.forEach(tab => {
+        tab.addEventListener("click", (event) => {
+            event.preventDefault();
+            const targetId = tab.getAttribute("href").slice(1);
+            const targetSection = document.getElementById(targetId);
+            if (!targetSection) return;
+
+            navigationLock = targetId;
+            setActiveTab(targetId);
+            targetSection.scrollIntoView({ behavior: "smooth", block: "start" });
+            if (navigationTimer) clearTimeout(navigationTimer);
+            navigationTimer = setTimeout(finishNavigation, 1500);
+        });
+    });
+
+    if ("onscrollend" in window) {
+        window.addEventListener("scrollend", () => {
+            finishNavigation();
+            updateActiveTabFromScroll();
+        });
+    }
+
+    window.addEventListener("scroll", updateActiveTabFromScroll, { passive: true });
+
+    const observer = new IntersectionObserver((entries) => {
+        if (navigationLock) return;
+        const visibleSections = entries
+            .filter(entry => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visibleSections.length) setActiveTab(visibleSections[0].target.id);
+    }, {
+        rootMargin: "-145px 0px -55% 0px",
+        threshold: [0.1, 0.35, 0.65]
+    });
+
+    sections.forEach(section => observer.observe(section));
+    updateActiveTabFromScroll();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -360,6 +456,30 @@ function initFinancingSliders() {
 // Core Solar & Financial Calculation Engine
 // ─────────────────────────────────────────────────────────────────────────────
 function recalculateAll() {
+    const status = document.getElementById("calculation-status");
+    if (AppState.calculationTimer) clearTimeout(AppState.calculationTimer);
+    const runId = ++AppState.calculationRunId;
+
+    if (status) {
+        status.textContent = "Analyzing your inputs and preparing the solar recommendation...";
+        status.classList.add("visible");
+        status.setAttribute("aria-busy", "true");
+    }
+
+    AppState.calculationTimer = setTimeout(() => {
+        performRecalculateAll();
+        if (runId !== AppState.calculationRunId) return;
+        if (status) {
+            status.textContent = "Analysis complete. Your recommendation has been updated.";
+            status.setAttribute("aria-busy", "false");
+            setTimeout(() => {
+                if (runId === AppState.calculationRunId) status.classList.remove("visible");
+            }, 1800);
+        }
+    }, CALCULATION_DELAY_MS);
+}
+
+function performRecalculateAll() {
     const cityData = SOLAR_DATA.cities[AppState.city] || SOLAR_DATA.cities["Mathura"];
     const discomData = SOLAR_DATA.discoms[AppState.discom] || SOLAR_DATA.discoms["DVVNL"];
 

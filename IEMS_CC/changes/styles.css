@@ -264,6 +264,26 @@ h1, h2, h3, h4, h5, h6 {
     display: none;
 }
 
+.hero-section,
+.feature-section {
+    scroll-margin-top: 145px;
+}
+
+#calculation-status {
+    display: none;
+    background: var(--accent-gold-tint);
+    border-bottom: 1px solid var(--border-color);
+    color: var(--accent-gold-text);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 7px 24px;
+    text-align: center;
+}
+
+#calculation-status.visible {
+    display: block;
+}
+
 .tabs-track {
     display: flex;
     gap: 6px;
@@ -296,6 +316,11 @@ h1, h2, h3, h4, h5, h6 {
     background: var(--primary);
     color: #FFFFFF;
     box-shadow: var(--shadow-sm);
+}
+
+.tab-link:focus-visible {
+    outline: 3px solid var(--accent-gold);
+    outline-offset: 2px;
 }
 
 body.dark-mode .tab-link.active {
